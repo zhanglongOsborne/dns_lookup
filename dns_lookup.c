@@ -2,11 +2,11 @@
 #include"dns_lookup.h"
 #include<string.h>
 
-tree_node* init_tree_node(tree_node *new_node,char*name,dict *dic,int level){
+tree_node* init_tree_node(tree_node *new_node,char*name,int level){
 	new_node = (tree_node*)malloc(sizeof(tree_node));
 	new_node->node_name = (char*)malloc(strlen(name)+1);
 	strcpy(new_node->node_name,name);
-	new_node->dict = dic;
+	new_node->dict = NULL;
 	new_node->father = NULL;
 	new_node->brother = NULL;
 	new_node->first_child = NULL;
@@ -27,7 +27,7 @@ boolean destory_tree_node(tree_node* node){
 			dict_destory(node->dict);
 		}
 		//从父节点dict中hash_table中删除该节点
-		if(node->fater != NULL){
+		if(node->father != NULL){
 			dict_delete(node->father->dict,node->node_name);
 			node->father->child_num--;	
 		}
@@ -79,6 +79,22 @@ boolean add_dns(tree_node *root,char *dns){
 		printf("the dns rule you want to add is already exist :%s\n",dns);
 		return true;
 	}
+	tree_node *current = NULL;
+	if((current = suffix_find_dns(root,dns)) == NULL){
+		current = root;
+	}
+	int current_level = current->level;//root看做是第0层
+	IString *array = NULL;
+	split(dns,".",array);
+	for(int i=current_level;i<array->num;i++){
+		tree_node *new_node;		
+		init_tree_node(new_node,(*array).str[i],i+1);	
+		if(!add_tree_node(current,new_node))
+			return false;
+		current = new_node;
+	}
+	free_IString(array);
+	return true;
 	
 }
 
@@ -92,8 +108,8 @@ tree_node* strict_find_dns(tree_node *root,char *dns){
 	tree_node *current = root;
 	for(int i=array->num-1;i>=0;i++){
 		if(current->first_child == NULL)
-			return NULL:
-		if(current = dict_find(current->dict,(*array).str[i]) == NULL)
+			return NULL;
+		if((current = dict_find(current->dict,(*array).str[i])) == NULL)
 			return NULL;
 	}
 	free_IString(array);
@@ -107,7 +123,7 @@ tree_node* suffix_find_dns(tree_node *root,char *dns){
 	for(int i=array->num-1;i>=0;i++){
 		if(current->first_child == NULL)
 			return current;
-		if(current = dict_find(current->dict,(*array).str[i]) == NULL)
+		if((current = dict_find(current->dict,(*array).str[i])) == NULL)
 			return NULL;
 	}
 	free_IString(array);

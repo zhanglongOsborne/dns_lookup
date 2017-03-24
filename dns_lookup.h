@@ -22,7 +22,7 @@ typedef struct {
 }IString;
 
 
-tree_node* init_tree_node(tree_node *new_node,char*name,dict*dic,int level,tree_node *father,tree_node *first_child,tree_node *last_child);
+tree_node* init_tree_node(tree_node *new_node,char*name,int level);
 
 boolean destory_tree_node(tree_node *node);
 
@@ -41,5 +41,5 @@ tree_node* strict_find_dns(tree_node *root,char* dns);
 tree_node* suffix_find_dns(tree_node *root,char* dns);
 
 
-void split(char *s,char *delim,char **ret_list);
+int split(char *src,char *delim,IString *istr);
 void free_IString(IString *istring);

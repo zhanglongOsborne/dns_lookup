@@ -21,7 +21,7 @@
 
 
 
- static dict_can_resize =1;
+ static int dict_can_resize =1;
  //默认开启rehash
  void dict_enable_resize(){
  	  dict_can_resize = 1;
@@ -101,6 +101,7 @@ dict *dict_init(){
 static int  dict_expand(dict *d,int size){
  	 dict_table_init(&d->ht[1],size);
 	 d->rehashindex = 0;  /*start rehash*/
+	 return 1;
 }
 
 static int  dict_find_index(dict *d,void *key){
@@ -195,6 +196,7 @@ static dict_entry *dict_find_entry(dict *d,void*key){
  	 dict_entry *entry = dict_find_entry(d,key);
  	 if(entry!=NULL)
  	 	entry->val = val;
+	 return 1;
  }
   static int dict_rehash(dict *d,int n){
   		if(!dict_is_rehashing(d)) return 0;
@@ -454,7 +456,7 @@ void dict_display(dict *d){
 		 	printf("max_chain_length  : %d\n",max_chain_length);
 		 	printf("avg_chain_length  : %0.02f\n\n",avg_chain_length);
 	 	}else{
-	 		printf("ht[%d] status size=%d,used=0\n",i,ht->size,ht->used);
+	 		printf("ht[%d] status size=%d,used=0\n",i,ht->size);
 	 	}
 	 	if(!dict_is_rehashing(d)) break;
 	 }
