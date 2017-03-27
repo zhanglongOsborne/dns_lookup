@@ -3,7 +3,7 @@
 #include<string.h>
 
 tree_node* init_tree_node(tree_node *new_node,char*name,int level){
-	new_node = (tree_node*)malloc(sizeof(tree_node));
+	//new_node = (tree_node*)malloc(sizeof(tree_node));
 	new_node->node_name = (char*)malloc(strlen(name)+1);
 	strcpy(new_node->node_name,name);
 	new_node->dict = NULL;
@@ -12,6 +12,7 @@ tree_node* init_tree_node(tree_node *new_node,char*name,int level){
 	new_node->first_child = NULL;
 	new_node->last_child = NULL;
 	new_node->child_num = 0;
+	new_node->level = level;
 	return new_node;
 }
 
@@ -84,49 +85,50 @@ boolean add_dns(tree_node *root,char *dns){
 		current = root;
 	}
 	int current_level = current->level;//root看做是第0层
-	IString *array = NULL;
-	split(dns,".",array);
-	for(int i=current_level;i<array->num;i++){
-		tree_node *new_node;		
-		init_tree_node(new_node,(*array).str[i],i+1);	
+	IString array;
+	split(dns,".",&array);
+	for(int i=array.num-current_level-1;i>=0;i--){
+		tree_node *new_node = (tree_node*)malloc(sizeof(tree_node));		
+		init_tree_node(new_node,array.str[i],current->level+1);	
 		if(!add_tree_node(current,new_node))
-			return false;
+			continue;
 		current = new_node;
 	}
-	free_IString(array);
+	free_IString(&array);
 	return true;
 	
 }
 
 tree_node* find_tree_node(tree_node *father,char *node_name){
+	if(father->dict == NULL)
+		return NULL;
 	return dict_find(father->dict,node_name);
 }
-
 tree_node* strict_find_dns(tree_node *root,char *dns){
-	IString *array;//使用完后需要释放内存
-	split(dns,".",array);
+	IString array;//使用完后需要释放内存
+	split(dns,".",&array);
 	tree_node *current = root;
-	for(int i=array->num-1;i>=0;i++){
+	for(int i=array.num-1;i>=0;i--){
 		if(current->first_child == NULL)
 			return NULL;
-		if((current = dict_find(current->dict,(*array).str[i])) == NULL)
+		if((current = dict_find(current->dict,array.str[i])) == NULL)
 			return NULL;
 	}
-	free_IString(array);
+	free_IString(&array);
 	return current;
 }
 
 tree_node* suffix_find_dns(tree_node *root,char *dns){
-	IString *array;
-	split(dns,".",array);
+	IString array;
+	split(dns,".",&array);
 	tree_node *current = root;
-	for(int i=array->num-1;i>=0;i++){
+	for(int i=array.num-1;i>=0;i--){
 		if(current->first_child == NULL)
 			return current;
-		if((current = dict_find(current->dict,(*array).str[i])) == NULL)
+		if((current = dict_find(current->dict,array.str[i])) == NULL)
 			return NULL;
 	}
-	free_IString(array);
+	free_IString(&array);
 	return current;
 }
 
@@ -156,7 +158,6 @@ int split(char *src, char *delim, IString* istr)
 {
 	int i;
 	char *str = NULL, *p = NULL;
-
 	(*istr).num = 1;
 	str = (char*)calloc(strlen(src)+1,sizeof(char));
 	if (str == NULL) return 0;
@@ -187,7 +188,6 @@ void free_IString(IString *istring){
 	for(int i=0;i<istring->num;i++){
 		free(istring->str[i]);
 	}	
-	free(istring);
 }
 
 

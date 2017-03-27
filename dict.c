@@ -172,7 +172,7 @@ static dict_entry *dict_add_entry(dict *d,void *key){
  
  
 static dict_entry *dict_find_entry(dict *d,void*key){
-  	   int h = d->hash(key); 
+  	 int h = d->hash(key); 
 	   int i,index ;
 	   dict_entry *de;
 	   for(i=0; i<=1;i++){
