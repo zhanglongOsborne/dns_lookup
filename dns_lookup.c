@@ -48,10 +48,14 @@ void delete_tree_node(tree_node *dele_node){
 		while(dele_node->first_child != NULL){
 			tree_node *tmp = dele_node->first_child;
 			dele_node->first_child = dele_node->first_child->brother;
-			delete_tree_node(dele_node->first_child);
+            if(dele_node->first_child == NULL)
+                dele_node->last_child = NULL;
+			delete_tree_node(tmp);
 		}
-		destory_tree_node(dele_node);
 	}	
+
+	destory_tree_node(dele_node);
+    dele_node = NULL;
 }
 //插入节点的时候需要向父节点的dict中添加该子节点
 boolean add_tree_node(tree_node *father,tree_node *new_node){
@@ -173,7 +177,7 @@ int split(char *src, char *delim, IString* istr)
 	for(i=1; p = strtok(NULL, delim); i++)
 	{
 		(*istr).num++;
-		(*istr).str = (char**)realloc((*istr).str,(i+1)*sizeof(char *));
+		(*istr).str = (char**)realloc((*istr).str,(sizeof((*istr).str)+1)*sizeof(char *));
 		if ((*istr).str == NULL) return 0;
 		(*istr).str[i] = (char*)calloc(strlen(p)+1,sizeof(char));
 		if ((*istr).str[0] == NULL) return 0;

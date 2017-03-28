@@ -8,15 +8,18 @@ char s[26] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q
 
 int random_int(int num){
 	srand(rand());
-	return rand()%num;
+	int ret = rand()%num;
+    return ret;
 }
 
 char* str_rand(){
 	int size = random_int(4)+1;	
-	char *result = (char*)malloc(size);
+	char *result = (char*)malloc(size+1);
 	for(int i=0;i<size;i++){
 		result[i] = s[random_int(26)];	
 	}
+    result[size] = '\0';
+    //printf("%s\n",result);
 	return result;
 }
 
@@ -28,7 +31,7 @@ char* dns_rand(){
 		s[i] = str_rand();	
 		longth = longth + strlen(s[i]);
 	}
-	char* dns = (char *)malloc(longth+size);
+	char* dns = (char *)calloc(longth+size,sizeof(char));
 	for(int i=0;i<size-1;i++){
 		strcat(dns,s[i]);
 		strcat(dns,".");
@@ -37,7 +40,7 @@ char* dns_rand(){
 	for(int i=0;i<size;i++){
 		free(s[i]);
 	}	
-	printf("the add dns is :%s\n",dns);
+	//printf("the add dns is :%s\n",dns);
 	return dns;
 }
 
@@ -45,14 +48,16 @@ int main(){
 	tree_node root;
 	init_tree_node(&root,"root",0);
 	root.dict=dict_init();
-	add_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
-
-	//if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
-	//	printf("find the dns!!!!!!!!!!");
-	for(int i=0;i<1000;i++){
+	if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
+		printf("find the dns!!!!!!!!!!");
+    
+	for(int i=0;i<100000;i++){
 		char *dns = dns_rand();
 		add_dns(&root,dns);	
 		free(dns);
 	}
+    delete_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
+    if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
+		printf("find the dns!!!!!!!!!!");
 	return 1;
 }

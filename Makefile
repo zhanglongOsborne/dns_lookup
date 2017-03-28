@@ -8,4 +8,4 @@ clean:
 	rm ./libdns_lookup.so dict.o dns_lookup.o test
 
 all:
-	gcc -g dict.c dns_lookup.c test.c -o test
+	gcc -g dict.c dns_lookup.c test.c -o test -std=c99
