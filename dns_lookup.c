@@ -36,6 +36,7 @@ boolean destory_tree_node(tree_node* node){
 		node->first_child = NULL;
 		node->last_child = NULL;
 		free(node->node_name);
+		node->node_name = NULL;
 		free(node);
 	}
 	return true;

@@ -56,6 +56,7 @@ static int  dict_if_need_expand(dict *d){
 static unsigned int dict_hash_func(const unsigned char *buf){
     unsigned int hash = 5381;
     unsigned char c;
+		printf("-------------the buf is:%s\n",buf);
     while ((c=*buf++)!='\0')
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     return hash;
@@ -218,6 +219,7 @@ static dict_entry *dict_find_entry(dict *d,void*key){
   			entry = d->ht[0].table[d->rehashindex];
   			while(entry){
   				next_entry = entry->next;
+					printf("rehash+++++++++ key is :%s\n",entry->key);
   				index      = d->hash(entry->key) & d->ht[1].size_mask; /*计算entry 在ht[1] 中的下标*/
   				entry->next= d->ht[1].table[index];
   				d->ht[1].table[index] = entry;
