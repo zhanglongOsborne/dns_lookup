@@ -39,6 +39,7 @@ boolean destory_tree_node(tree_node* node){
 		free(node->node_name);
 		node->node_name = NULL;
       	free(node);
+	    node = NULL;
 	}
 	return true;
 }
@@ -193,9 +194,12 @@ int split(char *src, char *delim, IString* istr)
 void free_IString(IString *istring){
 	for(int i=0;i<istring->num;i++){
 		free(istring->str[i]);
+		istring->str[i] = NULL;
 	}	
-    if(istring->str != NULL)
+    if(istring->str != NULL){
         free(istring->str);
+		istring->str = NULL;
+	}
 }
 
 

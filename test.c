@@ -57,24 +57,23 @@ int main(int argc , char **argv){
     if(strict_find_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
 		printf("find the dns!!!!!!!!!!");
         */
-/*
 	for(int i=0;i<rule_num;i++){
 		char *dns = dns_rand();
-		//add_dns(&root,dns);	
+		add_dns(root,dns);	
 		free(dns);
 	}
 	for(int i=0;i<test_num;i++){
 		char *dns = dns_rand();
-		strict_find_dns(&root,dns);	
+		strict_find_dns(root,dns);	
 		free(dns);
 	}
-    **/
     /*
     if(suffix_find_dns(root,"a.xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
 		printf("find the suffix dns!!!!!!!!!!");
         */
-    delete_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
+    //delete_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
     //muntrace();
     free(root);
+	root = NULL;
    	return 1;
 }

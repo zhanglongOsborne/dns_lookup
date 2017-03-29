@@ -57,7 +57,7 @@ typedef struct dict_iter{
  *  5.迭代
  */
 
-#define DICT_INIT_SIZE          8   //表空间初始大小
+#define DICT_INIT_SIZE          1   //表空间初始大小
 
 /*跟rehash相关*/
 #define DICT_FORCE_REHASH_RATE  1.5                              //强制进行rehash操作, used / size 
