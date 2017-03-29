@@ -60,7 +60,7 @@ void delete_tree_node(tree_node *dele_node){
 //插入节点的时候需要向父节点的dict中添加该子节点
 boolean add_tree_node(tree_node *father,tree_node *new_node){
 	if(find_tree_node(father,new_node->node_name)!=NULL){
-		printf("the node you added is already exist!");
+		//printf("the node you added is already exist!\n");
 		return false;
 	}
 	if(father->last_child != NULL){
@@ -82,7 +82,7 @@ boolean add_tree_node(tree_node *father,tree_node *new_node){
 
 boolean add_dns(tree_node *root,char *dns){
 	if(strict_find_dns(root,dns)!=NULL){
-		printf("the dns rule you want to add is already exist :%s\n",dns);
+		//printf("the dns rule you want to add is already exist :%s\n",dns);
 		return true;
 	}
 	tree_node *current = NULL;

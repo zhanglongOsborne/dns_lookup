@@ -40,7 +40,7 @@ char* dns_rand(){
 	for(int i=0;i<size;i++){
 		free(s[i]);
 	}	
-	//printf("the add dns is :%s\n",dns);
+	printf("%s\n",dns);
 	return dns;
 }
 
@@ -48,16 +48,25 @@ int main(){
 	tree_node root;
 	init_tree_node(&root,"root",0);
 	root.dict=dict_init();
-	if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
+	add_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
+  if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
 		printf("find the dns!!!!!!!!!!");
-    
-	for(int i=0;i<100000;i++){
+
+	for(int i=0;i<10000000;i++){
 		char *dns = dns_rand();
 		add_dns(&root,dns);	
 		free(dns);
 	}
-    delete_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
-    if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
-		printf("find the dns!!!!!!!!!!");
-	return 1;
+	for(int i=0;i<10000000;i++){
+		char *dns = dns_rand();
+		strict_find_dns(&root,dns);	
+		free(dns);
+	}
+
+  if(suffix_find_dns(&root,"a.xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
+		printf("find the suffix dns!!!!!!!!!!");
+  delete_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
+  if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") == NULL)
+		printf("not find the dns!!!!!!!!!!");
+   	return 1;
 }
