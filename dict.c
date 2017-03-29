@@ -1,7 +1,7 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <assert.h>
-
+ #include <mcheck.h>
  #include "dict.h"
 
 
@@ -389,15 +389,18 @@ void dict_empty(dict *d){
 				d->val_destory(entry->val);
 			free(entry);
 		}else{
-			free(d->ht[0].table);
+            if(d->ht[0].table != NULL)
+			    free(d->ht[0].table);
 			dict_table_clear(&d->ht[0]);
-			if(dict_is_rehashing(d)){
+			if(dict_is_rehashing(d)&&d->ht[1].table !=NULL){
 				free(d->ht[1].table);
 				dict_table_clear(&d->ht[1]);	
 			}
 			break;
 		}
 	}
+    if(iter != NULL)
+        free(iter);
 }
 void dict_destory(dict *d){
 	dict_empty(d);

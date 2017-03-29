@@ -3,6 +3,7 @@
 #include<string.h>
 #include"dns_lookup.h"
 #include"time.h"
+#include<mcheck.h>
 
 char s[26] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'};
 
@@ -40,33 +41,40 @@ char* dns_rand(){
 	for(int i=0;i<size;i++){
 		free(s[i]);
 	}	
-	printf("%s\n",dns);
+	//printf("%s\n",dns);
 	return dns;
 }
 
-int main(){
-	tree_node root;
-	init_tree_node(&root,"root",0);
-	root.dict=dict_init();
-	add_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
-  if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
+int main(int argc , char **argv){
+    //mtrace();
+    int rule_num = atoi(argv[1]);
+    int test_num = atoi(argv[2]);
+	tree_node *root = (tree_node *)malloc(sizeof(tree_node));
+	init_tree_node(root,"root",0);
+	root->dict=dict_init();
+	add_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
+    /**
+    if(strict_find_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
 		printf("find the dns!!!!!!!!!!");
-
-	for(int i=0;i<10000000;i++){
+        */
+/*
+	for(int i=0;i<rule_num;i++){
 		char *dns = dns_rand();
-		add_dns(&root,dns);	
+		//add_dns(&root,dns);	
 		free(dns);
 	}
-	for(int i=0;i<10000000;i++){
+	for(int i=0;i<test_num;i++){
 		char *dns = dns_rand();
 		strict_find_dns(&root,dns);	
 		free(dns);
 	}
-
-  if(suffix_find_dns(&root,"a.xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
+    **/
+    /*
+    if(suffix_find_dns(root,"a.xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
 		printf("find the suffix dns!!!!!!!!!!");
-  delete_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
-  if(strict_find_dns(&root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") == NULL)
-		printf("not find the dns!!!!!!!!!!");
+        */
+    delete_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
+    //muntrace();
+    free(root);
    	return 1;
 }

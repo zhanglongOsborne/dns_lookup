@@ -35,9 +35,10 @@ boolean destory_tree_node(tree_node* node){
 		node->father = NULL;
 		node->first_child = NULL;
 		node->last_child = NULL;
+        
 		free(node->node_name);
 		node->node_name = NULL;
-		free(node);
+      	free(node);
 	}
 	return true;
 }
@@ -146,10 +147,10 @@ boolean delete_dns(tree_node *root,char *dns){
 	//如果存在儿子节点，则不删除
 	if(first->first_child != NULL)
 		return true;
-	while(first->brother == NULL) first = first->father;
+	while(first->brother == NULL && first != root) first = first->father;
 	//注意，这里删除的时候先将查找到的first节点从父节点dict中删除。		
 	if(first == root ){
-		delete_tree_node(first);
+		delete_tree_node(first->first_child);
 		return true;
 	}
 	dict_delete(first->father->dict,first->node_name);
@@ -193,6 +194,8 @@ void free_IString(IString *istring){
 	for(int i=0;i<istring->num;i++){
 		free(istring->str[i]);
 	}	
+    if(istring->str != NULL)
+        free(istring->str);
 }
 
 
