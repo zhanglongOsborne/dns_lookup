@@ -301,6 +301,8 @@ static dict_entry *dict_iter_next_entry(dict_iter *iter){
 		for(i=0;i<ht->size;i++){
 			entry = ht->table[iter->index];
 			if(entry==NULL) iter->index ++;
+            else
+                break;
 		}
 		/*如果遍历完了*/
 		if(iter->index >= ht->size){
@@ -405,6 +407,7 @@ void dict_empty(dict *d){
 void dict_destory(dict *d){
 	dict_empty(d);
 	free(d);
+    d = NULL;
 }
 void dict_display(dict *d){
 	 int i;
@@ -467,5 +470,7 @@ void dict_display(dict *d){
 	 }
  }
 
-
+int get_hash_table_used(dict *d){
+    return d->ht[0].used>=d->ht[1].used?d->ht[0].used:d->ht[1].used;
+}
 

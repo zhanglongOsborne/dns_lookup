@@ -106,7 +106,7 @@ dict_entry *dict_get_random_entry(dict *d);
  void dict_destory(dict *d);
  void dict_status(dict *d);
 
-
+int get_hashtable_used(dict *d);
 
 
 

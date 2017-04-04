@@ -52,28 +52,33 @@ int main(int argc , char **argv){
 	tree_node *root = (tree_node *)malloc(sizeof(tree_node));
 	init_tree_node(root,"root",0);
 	root->dict=dict_init();
-	add_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
+	//add_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
     /**
     if(strict_find_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
 		printf("find the dns!!!!!!!!!!");
         */
+    char *dns = NULL;
 	for(int i=0;i<rule_num;i++){
-		char *dns = dns_rand();
-		add_dns(root,dns);	
+		dns = dns_rand();
+		//add_dns(root,dns);	
+        //delete_dns(root,dns);
 		free(dns);
+        dns = NULL;
 	}
 	for(int i=0;i<test_num;i++){
-		char *dns = dns_rand();
+		dns = dns_rand();
 		strict_find_dns(root,dns);	
 		free(dns);
+        dns = NULL;
 	}
+    destory_tree_node(root);
     /*
     if(suffix_find_dns(root,"a.xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)
 		printf("find the suffix dns!!!!!!!!!!");
         */
     //delete_dns(root,"xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh");
     //muntrace();
-    free(root);
+    //free(root);
 	root = NULL;
    	return 1;
 }

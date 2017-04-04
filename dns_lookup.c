@@ -5,10 +5,12 @@
 tree_node* init_tree_node(tree_node *new_node,char*name,int level){
 	//new_node = (tree_node*)malloc(sizeof(tree_node));
 	new_node->node_name = (char*)malloc(strlen(name)+1);
+    memset(new_node->node_name,0,strlen(name)+1);
 	strcpy(new_node->node_name,name);
 	new_node->dict = NULL;
 	new_node->father = NULL;
-	new_node->brother = NULL;
+	new_node->next = NULL;
+    new_node->front = NULL;
 	new_node->first_child = NULL;
 	new_node->last_child = NULL;
 	new_node->child_num = 0;
@@ -26,6 +28,7 @@ boolean destory_tree_node(tree_node* node){
 		//删除该节点维护的dict
 		if(node->dict !=NULL){
 			dict_destory(node->dict);
+            node->dict = NULL;
 		}
 		//从父节点dict中hash_table中删除该节点
 		if(node->father != NULL){
@@ -35,6 +38,8 @@ boolean destory_tree_node(tree_node* node){
 		node->father = NULL;
 		node->first_child = NULL;
 		node->last_child = NULL;
+        node->next = NULL;
+        node->front = NULL;
         
 		free(node->node_name);
 		node->node_name = NULL;
@@ -49,13 +54,27 @@ void delete_tree_node(tree_node *dele_node){
 	if(dele_node->first_child != NULL){
 		while(dele_node->first_child != NULL){
 			tree_node *tmp = dele_node->first_child;
-			dele_node->first_child = dele_node->first_child->brother;
+			dele_node->first_child = dele_node->first_child->next;
             if(dele_node->first_child == NULL)
                 dele_node->last_child = NULL;
 			delete_tree_node(tmp);
 		}
 	}	
+    if(dele_node->father->last_child == dele_node)
+            dele_node->father->last_child = dele_node->front;
 
+    if(dele_node->front == NULL){
+        dele_node->father->first_child = dele_node->next;
+        if(dele_node->next != NULL){
+            dele_node->next->front = NULL;
+            dele_node->next = NULL;
+        }
+    }else{
+        dele_node->front->next = dele_node->next;
+        dele_node->next->front = dele_node->front;
+        dele_node->front = NULL;
+        dele_node->next = NULL;
+    }
 	destory_tree_node(dele_node);
     dele_node = NULL;
 }
@@ -66,17 +85,20 @@ boolean add_tree_node(tree_node *father,tree_node *new_node){
 		return false;
 	}
 	if(father->last_child != NULL){
-		father->last_child->brother = new_node;
+		father->last_child->next = new_node;
+        new_node->front = father->last_child;
 		father->last_child = new_node;
+	    father->child_num ++;
 	}else{//当父节点没有子节点的时候，这时候加入子节点就需要开辟一个dict
 		father->first_child = new_node;
 		father->last_child = new_node;
-		father->dict = dict_init();
+        if(father->dict == NULL)
+		    father->dict = dict_init();
+	    father->child_num ++;
 	}
 	if(!dict_add(father->dict,new_node->node_name,new_node))
 		return false;
 
-	father->child_num ++;
 	new_node->father = father;
 	new_node->level = father->level+1;
 	return true;
@@ -96,9 +118,10 @@ boolean add_dns(tree_node *root,char *dns){
 	split(dns,".",&array);
 	for(int i=array.num-current_level-1;i>=0;i--){
 		tree_node *new_node = (tree_node*)malloc(sizeof(tree_node));		
+        memset(new_node,0,sizeof(tree_node));
 		init_tree_node(new_node,array.str[i],current->level+1);	
 		if(!add_tree_node(current,new_node))
-			continue;
+            return false;
 		current = new_node;
 	}
 	free_IString(&array);
@@ -116,10 +139,14 @@ tree_node* strict_find_dns(tree_node *root,char *dns){
 	split(dns,".",&array);
 	tree_node *current = root;
 	for(int i=array.num-1;i>=0;i--){
-		if(current->first_child == NULL)
+		if(current->first_child == NULL){
+            free_IString(&array);
 			return NULL;
-		if((current = dict_find(current->dict,array.str[i])) == NULL)
+        }
+		if((current = dict_find(current->dict,array.str[i])) == NULL){
+            free_IString(&array);
 			return NULL;
+        }
 	}
 	free_IString(&array);
 	return current;
@@ -130,10 +157,14 @@ tree_node* suffix_find_dns(tree_node *root,char *dns){
 	split(dns,".",&array);
 	tree_node *current = root;
 	for(int i=array.num-1;i>=0;i--){
-		if(current->first_child == NULL)
+		if(current->first_child == NULL){
+            free_IString(&array);
 			return current;
-		if((current = dict_find(current->dict,array.str[i])) == NULL)
+        }
+		if((current = dict_find(current->dict,array.str[i])) == NULL){
+            free_IString(&array);
 			return NULL;
+        }
 	}
 	free_IString(&array);
 	return current;
@@ -148,7 +179,7 @@ boolean delete_dns(tree_node *root,char *dns){
 	//如果存在儿子节点，则不删除
 	if(first->first_child != NULL)
 		return true;
-	while(first->brother == NULL && first != root) first = first->father;
+	while(first->next == NULL && first->front == NULL  && first != root ) first = first->father;
 	//注意，这里删除的时候先将查找到的first节点从父节点dict中删除。		
 	if(first == root ){
 		delete_tree_node(first->first_child);
@@ -179,10 +210,10 @@ int split(char *src, char *delim, IString* istr)
 	for(i=1; p = strtok(NULL, delim); i++)
 	{
 		(*istr).num++;
-		(*istr).str = (char**)realloc((*istr).str,(sizeof((*istr).str)+1)*sizeof(char *));
+		(*istr).str = (char**)realloc((*istr).str,(i+1)*sizeof(char *));
 		if ((*istr).str == NULL) return 0;
 		(*istr).str[i] = (char*)calloc(strlen(p)+1,sizeof(char));
-		if ((*istr).str[0] == NULL) return 0;
+		if ((*istr).str[i] == NULL) return 0;
 		strcpy((*istr).str[i],p);
 	}
 	free(str);
@@ -196,10 +227,8 @@ void free_IString(IString *istring){
 		free(istring->str[i]);
 		istring->str[i] = NULL;
 	}	
-    if(istring->str != NULL){
-        free(istring->str);
-		istring->str = NULL;
-	}
+    free((*istring).str);
+	istring->str = NULL;
 }
 
 
