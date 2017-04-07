@@ -18,18 +18,29 @@ typedef struct dict{
 	hash_table ht[2];  /*两个哈希表,一般情况下只会用到ht[1],需要重新hash的时候才会用到ht[1]*/
 	int  rehashindex;   /*rehash操作的下标,默认为-1,大于0表示正在进行rehash操作*/
 
-	unsigned int (*hash)(const unsigned char *key);  /*生成哈希值的函数*/
-	int (*hash_len)(const unsigned char *key,int len);  /*生成哈希值的函数*/
+	//unsigned int (*hash)(const unsigned char *key);  /*生成哈希值的函数*/
+	//int (*hash_len)(const unsigned char *key,int len);  /*生成哈希值的函数*/
 	/*key相关函数*/
-	void *(*key_match)(void *key1,void*key2); /*比较*/
-	void *(*key_dup)(void *key);              /*复制*/
-	void (*key_destory)(void *key);         /*销毁*/
+	//void *(*key_match)(void *key1,void*key2); /*比较*/
+	//void *(*key_dup)(void *key);              /*复制*/
+	//void (*key_destory)(void *key);         /*销毁*/
 
 	/*值相关函数*/
-	void *(*val_match)(void *val1,void*val2); /*比较*/
-	void *(*val_dup)(void *val);              /*复制*/
-	void (*val_destory)(void *val);         /*销毁*/
+	//void *(*val_match)(void *val1,void*val2); /*比较*/
+	//void *(*val_dup)(void *val);              /*复制*/
+	//void (*val_destory)(void *val);         /*销毁*/
 }dict;
+static unsigned int hash(const unsigned char *key);  /*生成哈希值的函数*/
+int hash_len(const unsigned char *key,int len);  /*生成哈希值的函数*/
+/*key相关函数*/
+void key_match(void *key1,void*key2); /*比较*/
+void key_dup(void *key);              /*复制*/
+void key_destory(void *key);         /*销毁*/
+
+	/*值相关函数*/
+void val_match(void *val1,void*val2); /*比较*/
+void val_dup(void *val);              /*复制*/
+void val_destory(void *val);         /*销毁*/
 
 /*迭代器*/
 typedef struct dict_iter{
@@ -64,6 +75,7 @@ typedef struct dict_iter{
 #define dict_is_rehashing(d)    ((d)->rehashindex!=-1)    //dict是否处在rehashing状态
 
 /*设置值*/
+/*
 #define dict_entry_set_val(entry,val)      ((entry)->val    = (val))
 
 #define dict_set_hash(d,func)              ((d)->hash        = func)
@@ -74,7 +86,7 @@ typedef struct dict_iter{
 #define dict_set_val_match(d,func)         ((d)->val_match = func)
 #define dict_set_val_dup(d,func)           ((d)->val_dup = func)
 #define dict_set_val_destory(d,func)      ((d)->val_destory = func)
-
+*/
 
 
 dict *dict_init();

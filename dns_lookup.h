@@ -10,10 +10,10 @@ typedef struct tree_node{
 	dict *dict;
 	int level;
 	struct tree_node *father;
-	struct tree_node *next;
-    struct tree_node *front;
-	struct tree_node *first_child;
-	struct tree_node *last_child;
+	//struct tree_node *next;
+    //struct tree_node *front;
+	//struct tree_node *first_child;
+	//struct tree_node *last_child;
 	int child_num;
 }tree_node;
 

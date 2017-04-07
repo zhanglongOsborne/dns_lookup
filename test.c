@@ -15,7 +15,7 @@ int random_int(int num){
 }
 
 char* str_rand(){
-	int size = random_int(20)+1;	
+	int size = random_int(30)+1;	
 	char *result = (char*)malloc(size+1);
 	for(int i=0;i<size;i++){
 		result[i] = s[random_int(26)];	
@@ -49,7 +49,8 @@ char* dns_rand(){
 int main(int argc , char **argv){
     //mtrace();
     int rule_num = atoi(argv[1]);
-    int test_num = atoi(argv[2]);
+    int test_num = atoi(argv[3]);
+    int add_flag = atoi(argv[2]);
 	tree_node *root = (tree_node *)malloc(sizeof(tree_node));
 	init_tree_node(root,"root",0);
 	root->dict=dict_init();
@@ -61,7 +62,8 @@ int main(int argc , char **argv){
     char *dns = NULL;
 	for(int i=0;i<rule_num;i++){
 		dns = dns_rand();
-		add_dns(root,dns);	
+        if(add_flag == 1)
+		    add_dns(root,dns);	
         //delete_dns(root,dns);
 		free(dns);
         dns = NULL;
@@ -72,9 +74,7 @@ int main(int argc , char **argv){
 		free(dns);
         dns = NULL;
 	}
-    //dict_status(root->dict);
-    //dict_status(root->last_child->dict);
-    //dict_status(root->last_child->last_child->dict);
+    dict_status(root->dict);
     destory_tree_node(root);
     /*
     if(suffix_find_dns(root,"a.xuyds.q.ilq.y.imawhwle.vjgre.hn.dwct.wdh") != NULL)

@@ -9,10 +9,10 @@ tree_node* init_tree_node(tree_node *new_node,char*name,int level){
 	strcpy(new_node->node_name,name);
 	new_node->dict = NULL;
 	new_node->father = NULL;
-	new_node->next = NULL;
-    new_node->front = NULL;
-	new_node->first_child = NULL;
-	new_node->last_child = NULL;
+	//new_node->next = NULL;
+    //new_node->front = NULL;
+	//new_node->first_child = NULL;
+	//new_node->last_child = NULL;
 	new_node->child_num = 0;
 	new_node->level = level;
 	return new_node;
@@ -21,7 +21,7 @@ tree_node* init_tree_node(tree_node *new_node,char*name,int level){
 //销毁树节点的时候需要销毁该节点维护的dict，并且从父节点dict中删除该节点
 boolean destory_tree_node(tree_node* node){
 	if(node != NULL){
-		if(node->first_child !=NULL || node->last_child != NULL){
+		if(node->child_num > 0){
 			printf("the node you destoryed has child node !");
 			return false;
 		}
@@ -36,11 +36,6 @@ boolean destory_tree_node(tree_node* node){
 			node->father->child_num--;	
 		}
 		node->father = NULL;
-		node->first_child = NULL;
-		node->last_child = NULL;
-        node->next = NULL;
-        node->front = NULL;
-        
 		free(node->node_name);
 		node->node_name = NULL;
       	free(node);
@@ -51,30 +46,17 @@ boolean destory_tree_node(tree_node* node){
 
 //删除的时候只能使用后根删除的方法
 void delete_tree_node(tree_node *dele_node){
-	if(dele_node->first_child != NULL){
-		while(dele_node->first_child != NULL){
-			tree_node *tmp = dele_node->first_child;
-			dele_node->first_child = dele_node->first_child->next;
-            if(dele_node->first_child == NULL)
-                dele_node->last_child = NULL;
+	if(dele_node->child_num > 0){
+        dict_iter *iter = dict_get_iter(dele_node->dict);
+        tree_node *tmp = NULL;
+		while((tmp = dict_iter_next(iter)) != NULL){
 			delete_tree_node(tmp);
 		}
-	}	
-    if(dele_node->father->last_child == dele_node)
-            dele_node->father->last_child = dele_node->front;
-
-    if(dele_node->front == NULL){
-        dele_node->father->first_child = dele_node->next;
-        if(dele_node->next != NULL){
-            dele_node->next->front = NULL;
-            dele_node->next = NULL;
+        if(iter != NULL){
+            free(iter);
+            iter = NULL;
         }
-    }else{
-        dele_node->front->next = dele_node->next;
-        dele_node->next->front = dele_node->front;
-        dele_node->front = NULL;
-        dele_node->next = NULL;
-    }
+	}	
 	destory_tree_node(dele_node);
     dele_node = NULL;
 }
@@ -84,21 +66,12 @@ boolean add_tree_node(tree_node *father,tree_node *new_node){
 		//printf("the node you added is already exist!\n");
 		return false;
 	}
-	if(father->last_child != NULL){
-		father->last_child->next = new_node;
-        new_node->front = father->last_child;
-		father->last_child = new_node;
-	    father->child_num ++;
-	}else{//当父节点没有子节点的时候，这时候加入子节点就需要开辟一个dict
-		father->first_child = new_node;
-		father->last_child = new_node;
-        if(father->dict == NULL)
-		    father->dict = dict_init();
-	    father->child_num ++;
-	}
+    if(father->dict == NULL)
+        father->dict = dict_init();
 	if(!dict_add(father->dict,new_node->node_name,new_node))
 		return false;
 
+	father->child_num ++;
 	new_node->father = father;
 	new_node->level = father->level+1;
 	return true;
@@ -120,11 +93,11 @@ boolean add_dns(tree_node *root,char *dns){
 		tree_node *new_node = (tree_node*)malloc(sizeof(tree_node));		
         memset(new_node,0,sizeof(tree_node));
 		init_tree_node(new_node,array.str[i],current->level+1);	
-		if(!add_tree_node(current,new_node))
-            return false;
+		add_tree_node(current,new_node);
 		current = new_node;
 	}
 	free_IString(&array);
+    //printf("add dns sucess:%s\n",dns);
 	return true;
 	
 }
@@ -139,15 +112,12 @@ tree_node* strict_find_dns(tree_node *root,char *dns){
 	split(dns,".",&array);
 	tree_node *current = root;
 	for(int i=array.num-1;i>=0;i--){
-		if(current->first_child == NULL){
-            free_IString(&array);
-			return NULL;
-        }
-		if((current = dict_find(current->dict,array.str[i])) == NULL){
+		if(current->child_num == 0 || (current = dict_find(current->dict,array.str[i])) == NULL){
             free_IString(&array);
 			return NULL;
         }
 	}
+    //printf("find the dns:%s\n",dns);
 	free_IString(&array);
 	return current;
 }
@@ -157,7 +127,7 @@ tree_node* suffix_find_dns(tree_node *root,char *dns){
 	split(dns,".",&array);
 	tree_node *current = root;
 	for(int i=array.num-1;i>=0;i--){
-		if(current->first_child == NULL){
+		if(current->child_num == 0){
             free_IString(&array);
 			return current;
         }
@@ -177,14 +147,13 @@ boolean delete_dns(tree_node *root,char *dns){
 		return false;
 	}
 	//如果存在儿子节点，则不删除
-	if(first->first_child != NULL)
+	if(first->child_num > 1 )
 		return true;
-	while(first->next == NULL && first->front == NULL  && first != root ) first = first->father;
-	//注意，这里删除的时候先将查找到的first节点从父节点dict中删除。		
-	if(first == root ){
-		delete_tree_node(first->first_child);
-		return true;
-	}
+	while(first->father && first->father->child_num == 1 ) {
+        if(first->father == root)
+            break;
+        first = first->father;
+    }
 	dict_delete(first->father->dict,first->node_name);
 	delete_tree_node(first);
 	return true;
@@ -197,27 +166,34 @@ int split(char *src, char *delim, IString* istr)
 	int i;
 	char *str = NULL, *p = NULL;
 	(*istr).num = 1;
-	str = (char*)calloc(strlen(src)+1,sizeof(char));
+    int src_len = strlen(src)+1;
+	str = (char*)calloc(src_len,sizeof(char));
 	if (str == NULL) return 0;
 	(*istr).str = (char**)calloc(1,sizeof(char *));
 	if ((*istr).str == NULL) return 0;
-	strcpy(str,src);
+    memcpy(str,src,src_len);
+	//strcpy(str,src);
 
 	p = strtok(str, delim);
-	(*istr).str[0] = (char*)calloc(strlen(p)+1,sizeof(char));
+    int p_len = strlen(p)+1;
+	(*istr).str[0] = (char*)calloc(p_len,sizeof(char));
 	if ((*istr).str[0] == NULL) return 0;
-	strcpy((*istr).str[0],p);
+	//strcpy((*istr).str[0],p);
+    memcpy((*istr).str[0],p,p_len);
 	for(i=1; p = strtok(NULL, delim); i++)
 	{
 		(*istr).num++;
 		(*istr).str = (char**)realloc((*istr).str,(i+1)*sizeof(char *));
 		if ((*istr).str == NULL) return 0;
-		(*istr).str[i] = (char*)calloc(strlen(p)+1,sizeof(char));
+        p_len = strlen(p)+1;
+		(*istr).str[i] = (char*)calloc(p_len,sizeof(char));
 		if ((*istr).str[i] == NULL) return 0;
-		strcpy((*istr).str[i],p);
+        memcpy((*istr).str[i],p,p_len);
+		//strcpy((*istr).str[i],p);
 	}
-	free(str);
-	str = p = NULL;
+    free(str);
+    str = NULL;
+	p = NULL;
 
 	return 1;
 }
