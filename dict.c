@@ -1,8 +1,8 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <assert.h>
- #include <mcheck.h>
  #include "dict.h"
+ #include <string.h>
 
 
  //查找某个键的下标,找到了则返回-1
@@ -12,11 +12,22 @@
  static int  dict_if_need_expand(dict *d);
  static int  dict_expand(dict *d,int size);
  static int  next_power(int size);
- static unsigned int dict_hash_unction(const unsigned char *buf, int len);
  static void dict_table_init(hash_table *ht,int size);
  static void dict_table_clear(hash_table *ht);
  static int dict_rehash(dict *d,int n);
 
+ static int dict_find_index_by_index(dict *d,char *buf,int start, int end);
+ static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end );
+/*生成哈希值的函数*/
+static unsigned int hash(const unsigned char *key); 
+static unsigned int hash_by_str_index(const unsigned char *buf, int start, int end);
+
+
+ static int strcmp_by_index(char *src,char *buf,int start ,int end);
+ static unsigned int crc32( const unsigned char *buf);
+ static unsigned int crc32_by_index(const unsigned char *buf,int start,int end);
+ static unsigned int multipli(const unsigned char *buf);
+ static unsigned int multipi_by_index(const unsigned char *buf,int start,int end);
 
  static const unsigned int  crc32tab[] = {
      0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL,
@@ -84,15 +95,6 @@
      0xb3667a2eL, 0xc4614ab8L, 0x5d681b02L, 0x2a6f2b94L,
      0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL, 0x2d02ef8dL 
  };
-unsigned int crc32( const unsigned char *buf)
-{
-    unsigned int  i, crc;
-    unsigned char c;
-    crc = 0xFFFFFFFF;
-    while((c=*buf++)!='\0')
-        crc = crc32tab[(crc ^ c) & 0xff] ^ (crc >> 8);
-    return crc^0xFFFFFFFF;
-}
 
  static int dict_can_resize =1;
  //默认开启rehash
@@ -124,18 +126,49 @@ static int  dict_if_need_expand(dict *d){
  			return 0;
 }
 
-unsigned int mutipli(const unsigned char *buf){
+static unsigned int crc32( const unsigned char *buf)
+{
+    unsigned int  crc;
+    crc = 0xFFFFFFFF;
+		for(int i=strlen(buf)-1;i>=0;i--){
+        crc = crc32tab[(crc ^ buf[i]) & 0xff] ^ (crc >> 8);
+		}
+    return crc^0xFFFFFFFF;
+}
+
+static unsigned int crc32_by_index( const unsigned char *buf,int start,int end)
+{
+    unsigned int  crc;
+    crc = 0xFFFFFFFF;
+		for(int i=end;i>=start;i--){
+        crc = crc32tab[(crc ^ buf[i]) & 0xff] ^ (crc >> 8);
+		}
+    return crc^0xFFFFFFFF;
+}
+
+static unsigned int multipli(const unsigned char *buf){
     unsigned int hash_key = 5381;
-    unsigned char c;
-    while ((c=*buf++)!='\0')
-        hash_key = ((hash_key << 5) + hash_key) + c; // hash * 33 + c 
+		for(int i=strlen(buf)-1;i>=0;i--){
+        hash_key = ((hash_key << 5) + hash_key) + buf[i]; // hash * 33 + c 
+		}
     return hash_key;
 
+}
+static unsigned int multipi_by_index(const unsigned char *buf,int start,int end){ //calculate the hash from end to start
+    unsigned int hash_key = 5318;
+    for(int i=end;i>=start;i--){
+        hash_key = ((hash_key << 5) + hash_key) + buf[i];
+    }
+    return hash_key;
 }
 
 /*hash 函数*/
 static unsigned int hash(const unsigned char *buf){
     return crc32(buf);
+}
+
+static unsigned int hash_by_str_index(const unsigned char *buf, int start, int end){
+    return multipi_by_index(buf,start,end);
 }
 
 
@@ -190,6 +223,36 @@ static int  dict_find_index(dict *d,void *key){
 	   return index;
 }
 
+static int dict_find_index_by_index(dict *d,char *buf,int start,int end){
+	unsigned int h = hash_by_str_index(buf,start,end);
+	dict_entry *de;
+	int i,index;
+	for(i=0;i<=1;i++){
+		index = h & d->ht[i].size_mask;
+		de = d->ht[i].table[index];
+		while(de){
+			if(strcmp_by_index(de->key,buf,start,end) == 0)
+				return -1;
+			de = de->next;
+		}
+		if(!dict_is_rehashing(d)) break;
+	}
+	return index;
+}
+
+static int strcmp_by_index(char *src,char *buf,int start ,int end){
+	int src_len = strlen(src), i=start;
+	char c;
+	if(src_len != (end - start +1))
+		return -1;
+	while((c=*src++) !='\0' && i<=end){
+		if(!(c == buf[i]))
+			return -1;
+		i++;
+	}
+	return 0;
+}
+
 //
 int dict_add(dict *d,void *key,void *val){
 	/*判断是否需要扩容*/
@@ -214,7 +277,7 @@ static dict_entry *dict_add_entry(dict *d,void *key){
  			return NULL;
  		entry = (dict_entry*)malloc(sizeof(dict_entry));
  		entry->key = key;
-        entry->val = NULL;
+    entry->val = NULL;
  		/*如果在执行rehash操作,则添加到ht[1],否则添加到ht[0]*/
  		if(dict_is_rehashing(d)){
  			entry->next           = d->ht[1].table[index];
@@ -235,6 +298,12 @@ static dict_entry *dict_add_entry(dict *d,void *key){
  	   dict_entry *entry = dict_find_entry(d,key);
  	   return entry==NULL ? NULL : entry->val;
  }
+
+void *dict_find_by_index(dict *d,char *buff,int start, int end){
+		if(dict_is_rehashing(d)) dict_rehash(d,1);
+		dict_entry *entry = dict_find_entry_by_index(d,buff,start,end);
+		return entry==NULL ? NULL : entry->val;
+}
 
  
  
@@ -258,14 +327,32 @@ static dict_entry *dict_find_entry(dict *d,void*key){
     return NULL;
 }
 
-//替换
+static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end ){
+  unsigned int h = hash_by_str_index(buff,start,end);
+	dict_entry *de;
+	int i,index;
+	for(i=0;i<=1;i++){
+		index = h & d->ht[i].size_mask;
+		de = d->ht[i].table[index];
+		while(de){
+			if(strcmp_by_index(de->key,buff,start,end) == 0)
+				return de;
+			de = de->next;
+		}
+		if(!dict_is_rehashing(d)) break;
+	}
+	return NULL;
+ 
+}
+
  int dict_replace(dict *d,void *key, void *val){
  	 dict_entry *entry = dict_find_entry(d,key);
  	 if(entry!=NULL)
  	 	entry->val = val;
 	 return 1;
  }
-  static int dict_rehash(dict *d,int n){
+
+ static int dict_rehash(dict *d,int n){
   		if(!dict_is_rehashing(d)) return 0;
 
   		int index;
@@ -343,11 +430,6 @@ static dict_entry *dict_find_entry(dict *d,void*key){
  	 return 1;
  }
 
-  int dict_is_exist(dict *d, void *key){
-  	  return dict_find_index(d,key)==-1 ? 1 : 0;
-  }
- 
-
 static dict_entry *dict_iter_next_entry(dict_iter *iter){
 	dict_entry *entry,*next_entry,*ret_entry;
 	int index;
@@ -408,39 +490,6 @@ void *dict_iter_next(dict_iter *iter){
 	}
 }
 
-dict_entry *dict_get_random_entry(dict *d){
-	if((d->ht[0].used + d->ht[1].used)==0)  //空字典
-		return NULL;
-	if(dict_is_rehashing(d)) dict_rehash(d,1);
-	int index ;
-	dict_entry *entry,*p;
-	if(dict_is_rehashing(d)){
-		do{
-			index = random()%(d->ht[0].size + d->ht[1].size);
-			entry = (index >= d->ht[0].size) ? d->ht[1].table[index-d->ht[0].size] : d->ht[0].table[index];
-		}while(entry==NULL);
-	}else{
-		do{
-			index = random() % d->ht[0].size_mask;
-			entry = d->ht[0].table[index];
-		}while(entry==NULL);
-	}
-	int list_len=0;
-	int n;
-	p = entry;
-	if(entry->next){
-		while(entry){
-			list_len ++;
-			entry = entry->next;
-		}
-		n = random() % list_len;
-		while(n--){
-			p = p->next;
-		}
-	}
-	return p;
-}
-
 void dict_empty(dict *d){
 	dict_iter *iter  = dict_get_iter(d);
 	dict_entry *entry=NULL;
@@ -467,7 +516,7 @@ void dict_empty(dict *d){
 void dict_destory(dict *d){
 	dict_empty(d);
 	free(d);
-    d = NULL;
+  d = NULL;
 }
 void dict_display(dict *d){
 	 int i;
@@ -480,7 +529,7 @@ void dict_display(dict *d){
 	 		if(entry){
 	 			printf("index=%d, ",j);
 		 		while(entry){
-		 			printf(",%s",entry->val);
+		 			printf(",%s",(char *)entry->val);
 		 			entry = entry->next;
 		 		}
 		 		printf("\n");

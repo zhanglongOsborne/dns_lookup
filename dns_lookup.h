@@ -10,11 +10,8 @@ typedef struct tree_node{
 	dict *dict;
 	int level;
 	struct tree_node *father;
-	//struct tree_node *next;
-    //struct tree_node *front;
-	//struct tree_node *first_child;
-	//struct tree_node *last_child;
 	int child_num;
+	boolean terminal_flag;
 }tree_node;
 
 typedef struct {
@@ -23,7 +20,7 @@ typedef struct {
 }IString;
 
 
-tree_node* init_tree_node(tree_node *new_node,char*name,int level);
+tree_node* init_tree_node(tree_node *new_node,char*buff,int start,int end,int level);
 
 boolean destory_tree_node(tree_node *node);
 
@@ -31,16 +28,16 @@ void delete_tree_node(tree_node *dele_node);
 
 boolean add_tree_node(tree_node *father,tree_node *new_node);
 
-tree_node* find_tree_node(tree_node *father,char* node_name);
+tree_node* find_tree_node(tree_node *father,char* dns,int start,int end);
 
-boolean delete_dns(tree_node *root,char *dns);
+boolean delete_dns(tree_node *root,char *dns,int dns_len,char delim);
 
-boolean add_dns(tree_node *root,char *dns);
+boolean add_dns(tree_node *root,char *dns,int dns_len,char delim);
 
-tree_node* strict_find_dns(tree_node *root,char* dns);
+tree_node* strict_find_dns(tree_node *root,char* dns,int dns_len,char delim);
 
-tree_node* suffix_find_dns(tree_node *root,char* dns);
+tree_node* suffix_find_dns(tree_node *root,char* dns,int dns_len ,char delim);
+
+tree_node *strict_suffix_find_dns(tree_node *root,char *dns,int dns_len,char delim);
 
 
-int split(char *src,char *delim,IString *istr);
-void free_IString(IString *istring);
