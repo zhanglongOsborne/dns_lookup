@@ -8,7 +8,7 @@
  //查找某个键的下标,找到了则返回-1
  static int  dict_find_index(dict *d,void *key); 
  static dict_entry *dict_find_entry(dict *d,void*key);
- static dict_entry *dict_add_entry(dict *d,void *key);
+ static dict_entry *dict_add_entry(dict *d,void *key,int key_len);
  static int  dict_if_need_expand(dict *d);
  static int  dict_expand(dict *d,int size);
  static int  next_power(int size);
@@ -23,7 +23,7 @@ static unsigned int hash(const unsigned char *key);
 static unsigned int hash_by_str_index(const unsigned char *buf, int start, int end);
 
 
- static int strcmp_by_index(char *src,char *buf,int start ,int end);
+ static int strcmp_by_index(char *src,int src_len,char *buf,int start ,int end);
  static unsigned int crc32( const unsigned char *buf);
  static unsigned int crc32_by_index(const unsigned char *buf,int start,int end);
  static unsigned int multipli(const unsigned char *buf);
@@ -130,8 +130,10 @@ static unsigned int crc32( const unsigned char *buf)
 {
     unsigned int  crc;
     crc = 0xFFFFFFFF;
-		for(int i=strlen(buf)-1;i>=0;i--){
-        crc = crc32tab[(crc ^ buf[i]) & 0xff] ^ (crc >> 8);
+		int str_len = strlen(buf);
+		buf = buf+str_len-1;
+		for(int i=str_len-1;i>=0;i--){
+        crc = crc32tab[(crc ^ *buf--) & 0xff] ^ (crc >> 8);
 		}
     return crc^0xFFFFFFFF;
 }
@@ -140,31 +142,35 @@ static unsigned int crc32_by_index( const unsigned char *buf,int start,int end)
 {
     unsigned int  crc;
     crc = 0xFFFFFFFF;
+		buf = buf + end;
 		for(int i=end;i>=start;i--){
-        crc = crc32tab[(crc ^ buf[i]) & 0xff] ^ (crc >> 8);
+        crc = crc32tab[(crc ^ *buf--) & 0xff] ^ (crc >> 8);
 		}
     return crc^0xFFFFFFFF;
 }
 
 static unsigned int multipli(const unsigned char *buf){
     unsigned int hash_key = 5381;
-		for(int i=strlen(buf)-1;i>=0;i--){
-        hash_key = ((hash_key << 5) + hash_key) + buf[i]; // hash * 33 + c 
+		int buf_len = strlen(buf);
+		buf = buf + buf_len - 1;
+		for(int i=buf_len-1;i>=0;i--){
+        hash_key = ((hash_key << 5) + hash_key) + *buf--; // hash * 33 + c 
 		}
     return hash_key;
 
 }
 static unsigned int multipi_by_index(const unsigned char *buf,int start,int end){ //calculate the hash from end to start
-    unsigned int hash_key = 5318;
+    unsigned int hash_key = 5381;
+		buf = buf + end;
     for(int i=end;i>=start;i--){
-        hash_key = ((hash_key << 5) + hash_key) + buf[i];
+        hash_key = ((hash_key << 5) + hash_key) + *buf--;
     }
     return hash_key;
 }
 
 /*hash 函数*/
 static unsigned int hash(const unsigned char *buf){
-    return crc32(buf);
+    return multipli(buf);
 }
 
 static unsigned int hash_by_str_index(const unsigned char *buf, int start, int end){
@@ -231,7 +237,7 @@ static int dict_find_index_by_index(dict *d,char *buf,int start,int end){
 		index = h & d->ht[i].size_mask;
 		de = d->ht[i].table[index];
 		while(de){
-			if(strcmp_by_index(de->key,buf,start,end) == 0)
+			if(strcmp_by_index(de->key,de->key_len,buf,start,end) == 0)
 				return -1;
 			de = de->next;
 		}
@@ -240,13 +246,14 @@ static int dict_find_index_by_index(dict *d,char *buf,int start,int end){
 	return index;
 }
 
-static int strcmp_by_index(char *src,char *buf,int start ,int end){
-	int src_len = strlen(src), i=start;
+static int strcmp_by_index(char *src,int src_len,char *buf,int start ,int end){
+	int i=start;
 	char c;
+	buf = buf + start;
 	if(src_len != (end - start +1))
 		return -1;
 	while((c=*src++) !='\0' && i<=end){
-		if(!(c == buf[i]))
+		if(!(c == *buf++))
 			return -1;
 		i++;
 	}
@@ -254,13 +261,13 @@ static int strcmp_by_index(char *src,char *buf,int start ,int end){
 }
 
 //
-int dict_add(dict *d,void *key,void *val){
+int dict_add(dict *d,void *key,int key_len,void *val){
 	/*判断是否需要扩容*/
 	dict_if_need_expand(d); 
 	/*如果正在执行rehashing，则向前rehash一步*/
 	if(dict_is_rehashing(d)) dict_rehash(d,1);  
 
-	dict_entry *entry = dict_add_entry(d,key);
+	dict_entry *entry = dict_add_entry(d,key,key_len);
 	if(entry!=NULL){
 		entry->val = val;
 		return 1;
@@ -270,13 +277,14 @@ int dict_add(dict *d,void *key,void *val){
 
 
 
-static dict_entry *dict_add_entry(dict *d,void *key){
+static dict_entry *dict_add_entry(dict *d,void *key,int key_len){
  		int index;
  		dict_entry *entry;
  		if((index=dict_find_index(d,key))==-1) /*如果对应的key已经存在*/
  			return NULL;
  		entry = (dict_entry*)malloc(sizeof(dict_entry));
  		entry->key = key;
+		entry->key_len = key_len;
     entry->val = NULL;
  		/*如果在执行rehash操作,则添加到ht[1],否则添加到ht[0]*/
  		if(dict_is_rehashing(d)){
@@ -308,9 +316,8 @@ void *dict_find_by_index(dict *d,char *buff,int start, int end){
  
  
 static dict_entry *dict_find_entry(dict *d,void*key){
-    int h = hash(key); 
-    int i,index ;
     dict_entry *de;
+    int h = hash(key),i,index; 
     for(i=0; i<=1;i++){
         index = h & d->ht[i].size_mask;  //得到对应table的下标
         de    = d->ht[i].table[index];
@@ -335,7 +342,7 @@ static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end
 		index = h & d->ht[i].size_mask;
 		de = d->ht[i].table[index];
 		while(de){
-			if(strcmp_by_index(de->key,buff,start,end) == 0)
+			if(strcmp_by_index(de->key,de->key_len,buff,start,end) == 0)
 				return de;
 			de = de->next;
 		}
@@ -365,14 +372,10 @@ static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end
 
   			while(d->ht[0].table[d->rehashindex]==NULL){
   				 d->rehashindex ++; /*跳过空的hash表*/
-  				// if(d->rehashindex >= d->ht[0].size){  //保证下标是正确的避免段错误
-  				// 	return 0;
-  				// }
   			}
   			entry = d->ht[0].table[d->rehashindex];
   			while(entry){
   				next_entry = entry->next;
-					//printf("rehash+++++++++ key is :%s\n",entry->key);
   				index      = hash(entry->key) & d->ht[1].size_mask; /*计算entry 在ht[1] 中的下标*/
   				entry->next= d->ht[1].table[index];
   				d->ht[1].table[index] = entry;

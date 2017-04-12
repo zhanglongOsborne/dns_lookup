@@ -19,6 +19,7 @@ tree_node* init_tree_node(tree_node *new_node,char*buff,int start,int end,int le
 	strncat(new_node->node_name,buff+start,end-start+1);
 	new_node->dict = NULL;
 	new_node->father = NULL;
+	new_node->name_len = end-start+1;
 	new_node->child_num = 0;
 	new_node->level = level;
 	new_node->terminal_flag = false;
@@ -78,7 +79,7 @@ boolean add_tree_node(tree_node *father,tree_node *new_node){
 	}
   if(father->dict == NULL)
     father->dict = dict_init();
-	if(!dict_add(father->dict,new_node->node_name,new_node))
+	if(!dict_add(father->dict,new_node->node_name,new_node->name_len,new_node))
 		return false;
 
 	father->child_num ++;

@@ -2,6 +2,7 @@ typedef struct dict_entry{
 	void *key; 
 	void *val;
 	struct dict_entry *next; /*消除hash碰撞*/
+	int key_len;
 }dict_entry;
 
 
@@ -22,11 +23,11 @@ typedef struct dict{
 
 /*迭代器*/
 typedef struct dict_iter{
-	int index;
 	dict *d;                   /*当前字典*/
-	int table;
 	dict_entry *entry;       
 	dict_entry *next_entry;
+	int index;
+	int table;
 }dict_iter;
 
 
@@ -49,7 +50,7 @@ typedef struct dict_iter{
 #define DICT_INIT_SIZE          1   //表空间初始大小
 
 /*跟rehash相关*/
-#define DICT_FORCE_REHASH_RATE  1.5                              //强制进行rehash操作, used / size 
+#define DICT_FORCE_REHASH_RATE  1                              //强制进行rehash操作, used / size 
 #define dict_is_rehashing(d)    ((d)->rehashindex!=-1)    //dict是否处在rehashing状态
 
 
@@ -57,7 +58,7 @@ typedef struct dict_iter{
  dict *dict_init();
 
  //增加
- int dict_add(dict *d,void *key,void *val);
+ int dict_add(dict *d,void *key,int key_len,void *val);
  //查找
  void *dict_find(dict *d,void *key); 
  void *dict_find_by_index(dict *d,char *buff,int start, int end);

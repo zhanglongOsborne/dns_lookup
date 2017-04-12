@@ -8,8 +8,9 @@ typedef int boolean;
 typedef struct tree_node{
 	char *node_name;
 	dict *dict;
-	int level;
 	struct tree_node *father;
+	int name_len;
+	int level;
 	int child_num;
 	boolean terminal_flag;
 }tree_node;
