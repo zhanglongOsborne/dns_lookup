@@ -3,11 +3,12 @@
 #include"dns_lookup.h"
 #include<string.h>
 
-int find_the_start_index(char *dns,int end,char delim){
+inline static int find_the_start_index(char *dns,int end,char delim){
 	if(end < 0)
 		return -1;
+	dns = dns + end;
 	for(int i=end;i>=0;i--){
-		if(dns[i] == delim)
+		if(*dns-- == delim)
 			return i+1;
 	}
 	return 0;

@@ -17,13 +17,13 @@
  static int dict_rehash(dict *d,int n);
 
  static int dict_find_index_by_index(dict *d,char *buf,int start, int end);
- static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end );
+ inline static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end );
 /*生成哈希值的函数*/
 static unsigned int hash(const unsigned char *key); 
 static unsigned int hash_by_str_index(const unsigned char *buf, int start, int end);
 
 
- static int strcmp_by_index(char *src,int src_len,char *buf,int start ,int end);
+ inline static int strcmp_by_index(char *src,int src_len,char *buf,int start ,int end);
  static unsigned int crc32( const unsigned char *buf);
  static unsigned int crc32_by_index(const unsigned char *buf,int start,int end);
  static unsigned int multipli(const unsigned char *buf);
@@ -246,14 +246,13 @@ static int dict_find_index_by_index(dict *d,char *buf,int start,int end){
 	return index;
 }
 
-static int strcmp_by_index(char *src,int src_len,char *buf,int start ,int end){
+inline static int strcmp_by_index(char *src,int src_len,char *buf,int start ,int end){
 	int i=start;
-	char c;
 	buf = buf + start;
 	if(src_len != (end - start +1))
 		return -1;
-	while((c=*src++) !='\0' && i<=end){
-		if(!(c == *buf++))
+	while(i<=end){
+		if(!(*src++ == *buf++))
 			return -1;
 		i++;
 	}
@@ -317,7 +316,7 @@ void *dict_find_by_index(dict *d,char *buff,int start, int end){
  
 static dict_entry *dict_find_entry(dict *d,void*key){
     dict_entry *de;
-    int h = hash(key),i,index; 
+    unsigned int h = hash(key),i,index; 
     for(i=0; i<=1;i++){
         index = h & d->ht[i].size_mask;  //得到对应table的下标
         de    = d->ht[i].table[index];
@@ -334,9 +333,9 @@ static dict_entry *dict_find_entry(dict *d,void*key){
     return NULL;
 }
 
-static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end ){
-  unsigned int h = hash_by_str_index(buff,start,end);
+inline static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end ){
 	dict_entry *de;
+  unsigned int h = hash_by_str_index(buff,start,end);
 	int i,index;
 	for(i=0;i<=1;i++){
 		index = h & d->ht[i].size_mask;
@@ -349,7 +348,6 @@ static dict_entry *dict_find_entry_by_index(dict *d,char *buff,int start,int end
 		if(!dict_is_rehashing(d)) break;
 	}
 	return NULL;
- 
 }
 
  int dict_replace(dict *d,void *key, void *val){

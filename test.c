@@ -65,22 +65,24 @@ int main(int argc,char **argv){
 	if(strict_find_dns(root,dns_test,strlen(dns_test),'.') != NULL)
 		printf("find the dns!!!!!!!!!!");
 	**/
-	FILE *fp = fopen("dns_log_200W","r");
-	char **dns_line = (char **)malloc(4000000*sizeof(char *));
-	for(int i=0;i<4000000;i++){
-		dns_line[i] = (char *)malloc(200);
-		memset(dns_line[i],0,200);
-		fgets(dns_line[i],199,fp);
+	FILE *fp = fopen("dns_test_1000W","r");
+	char **dns_line = (char **)malloc(2000000*sizeof(char *));
+	int dns_len_array[2000000];
+	for(int i=0;i<2000000;i++){
+		dns_line[i] = (char *)malloc(150);
+		memset(dns_line[i],0,150);
+		fgets(dns_line[i],149,fp);
+		dns_len_array[i] = strlen(dns_line[i]);
 	}
 
 	for(int i=0;i<1000000;i++){
 		add_dns(root,dns_line[i],strlen(dns_line[i]),'.');	
 	}
-	/**
-	for(int i=0;i<4000000;i++){
-		strict_find_dns(root,dns_line[i],strlen(dns_line[i]),'.');
+	for(int i=0;i<2000000;i++){
+		//if(strict_find_dns(root,dns_line[i],dns_len_array[i],'.'))
+		//	printf("find the dns:%s",dns_line[i]);
+		strict_find_dns(root,dns_line[i],dns_len_array[i],'.');
 	}
-	**/
 	/**
 	dns_t *dns = NULL;
 	for(int i=0;i<rule_num;i++){
@@ -102,8 +104,6 @@ int main(int argc,char **argv){
 		free(dns);
 		dns = NULL;
 	}
-	**/
-	/**
 	if(strict_suffix_find_dns(root,dns_test,strlen(dns_test),'.') != NULL)
 		 printf("find the suffix dns!!!!!!!!!!");
 	delete_dns(root,dns_test,strlen(dns_test),'.');
